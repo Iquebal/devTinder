@@ -6,6 +6,7 @@ const {validateSignupData} = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const cookieparser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/auth");
 
 app.use(express.json());
 app.use(cookieparser());
@@ -45,15 +46,13 @@ app.post("/login", async (req, res) => {
       throw new Error("Invalid credentials");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.validatePassword(password);
 
     if (isPasswordValid) {
-      // Create JWT token
-      const token = await jwt.sign({_id: user._id}, "DEV@Tender$789");
-      res.cookie("token", token);
-      //validate my token
-      const decodedMessage = await jwt.verify(token, "DEV@Tender$789");
-      const {_id} = decodedMessage;
+      const token = await user.getJWT();
+
+      res.cookie("token", token, {httpOnly: true});
+
       res.send("Login successful!!!");
     } else {
       throw new Error("Invalid credentials");
@@ -63,10 +62,22 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", (req, res) => {
-  const cookies = req.cookies;
-  const {token} = cookies;
-  res.send("Reading cookie");
+app.get("/profile", userAuth, (req, res) => {
+  try {
+    const user = req.user;
+
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("ERROR: " + err.message);
+  }
+});
+
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    console.log("Sending connection request");
+    res.send(user.firstName + " Connection request sent!!!");
+  } catch (err) {}
 });
 
 // Get User by email
