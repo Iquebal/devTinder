@@ -2,7 +2,14 @@ const express = require("express");
 const connectDb = require("./config/database");
 const app = express();
 const cookieparser = require("cookie-parser");
+const cors = require("cors");
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieparser());
 
@@ -12,6 +19,7 @@ const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestRouter = require("./routes/request");
 const userRouter = require("./routes/user");
+const {trusted} = require("mongoose");
 
 //const requestRouter = require("./src/routes/request");
 
@@ -28,5 +36,5 @@ connectDb()
     });
   })
   .catch((err) => {
-    console.log("Database can not be connected!");
+    console.log("Database can not be connected!", err.message);
   });
